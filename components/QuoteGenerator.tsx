@@ -1,108 +1,95 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { toPng } from 'html-to-image';
-import { Download, Share2 } from 'lucide-react';
+import { Download, Rocket } from 'lucide-react';
+import Link from 'next/link';
 
-// Define template styles (Tailwind Classes)
-const TEMPLATES: Record<string, string> = {
-    minimal: "bg-white text-gray-900 font-sans border-2 border-gray-100",
-    luxury: "bg-slate-900 text-amber-400 font-serif border-4 border-amber-500/20",
-    bold: "bg-blue-600 text-white font-bold tracking-tight",
+const TEMPLATES = {
+    luxury: "bg-slate-900 text-amber-50 font-serif border-4 border-amber-500/30 flex flex-col justify-center items-center text-center p-8",
+    minimal: "bg-white text-gray-900 font-sans border-2 border-gray-100 flex flex-col justify-center items-start text-left p-8",
+    bold: "bg-blue-600 text-white font-bold tracking-tighter flex flex-col justify-center items-center text-center p-8 uppercase"
 };
 
-interface QuoteGeneratorProps {
-    title: string;
-    author?: string;
-    description?: string;
-}
-
-export default function QuoteGenerator({ title, author = "DailySpark", description }: QuoteGeneratorProps) {
+export default function QuoteGenerator({ title, author = "Unknown", description }: { title: string, author?: string, description?: string }) {
     const ref = useRef<HTMLDivElement>(null);
-    const [currentTemplate, setCurrentTemplate] = useState('minimal');
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [theme, setTheme] = useState('luxury');
+    const [loading, setLoading] = useState(false);
 
-    const handleDownload = useCallback(() => {
-        if (ref.current === null) return;
-        setIsGenerating(true);
+    // Map incoming props to component logic
+    const quote = title;
+    const watermark = "DailySpark.io";
 
-        toPng(ref.current, {
-            cacheBust: true,
-            pixelRatio: 3, // 3倍图，确保文字边缘锐利
-            width: 320,    // 原始渲染宽度
-            height: 400,   // 原始渲染高度
-            // 最终输出将是 (320*3) x (400*3) = 960 x 1200 px
-        })
-            .then((dataUrl) => {
-                const link = document.createElement('a');
-                link.download = `dailyspark-${currentTemplate}.png`;
-                link.href = dataUrl;
-                link.click();
-                setIsGenerating(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setIsGenerating(false);
-            });
-    }, [ref, currentTemplate]);
+    const downloadImage = async () => {
+        if (!ref.current) return;
+        setLoading(true);
+        try {
+            const dataUrl = await toPng(ref.current, { cacheBust: true, pixelRatio: 2 });
+            const link = document.createElement('a');
+            link.download = `dailyspark-${theme}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            console.error(err);
+        }
+        setLoading(false);
+    };
 
     return (
-        <div className="flex flex-col gap-6 p-6 bg-gray-50 rounded-xl">
-            {/* 1. Preview Area (Canvas) */}
-            <div className="w-full flex justify-center bg-gray-200/50 p-4 rounded-lg overflow-hidden">
+        <div className="flex flex-col gap-6 p-4 border border-gray-200 rounded-xl bg-white shadow-sm">
+            {/* 1. Canvas Preview Area */}
+            <div className="bg-gray-50 rounded-lg p-6 flex justify-center items-center overflow-hidden">
                 <div
                     ref={ref}
-                    className={`aspect-[4/5] w-[320px] p-8 flex flex-col justify-center items-center text-center transition-all duration-300 shadow-xl ${TEMPLATES[currentTemplate]}`}
+                    className={`w-[320px] h-[400px] shadow-2xl transition-all duration-300 relative ${TEMPLATES[theme as keyof typeof TEMPLATES]}`}
                 >
                     <div className="flex-1 flex flex-col justify-center">
-                        <h2 className="text-2xl md:text-3xl leading-tight mb-6">
-                            "{title}"
-                        </h2>
-                        <p className="text-sm opacity-80 uppercase tracking-widest">
-                            — {author}
-                        </p>
+                        <p className="text-2xl leading-snug mb-6">{quote}</p>
+                        <p className="text-sm opacity-80">— {author}</p>
                     </div>
-                    <div className="mt-auto pt-8 text-[10px] opacity-50">
-                        Created with DailySpark.io
+                    <div className="absolute bottom-4 opacity-40 text-[10px] font-sans tracking-widest uppercase">
+                        {watermark}
                     </div>
                 </div>
             </div>
 
-            {/* 2. Control Panel */}
-            <div className="space-y-4">
-                <div className="flex gap-2 justify-center">
-                    {Object.keys(TEMPLATES).map((tmpl) => (
-                        <button
-                            key={tmpl}
-                            onClick={() => setCurrentTemplate(tmpl)}
-                            className={`px-4 py-2 text-sm rounded-full capitalize transition-all ${currentTemplate === tmpl
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-white text-gray-600 hover:bg-gray-100'
-                                }`}
-                        >
-                            {tmpl}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+            {/* 2. Template Switcher */}
+            <div className="flex justify-center gap-3">
+                {Object.keys(TEMPLATES).map((t) => (
                     <button
-                        onClick={handleDownload}
-                        disabled={isGenerating}
-                        className="flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors"
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${theme === t ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-gray-600 hover:bg-gray-50'
+                            }`}
                     >
-                        <Download size={18} />
-                        {isGenerating ? 'Saving...' : 'Download Image'}
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
                     </button>
-                    <button className="flex items-center justify-center gap-2 bg-blue-100 text-blue-700 py-3 rounded-lg hover:bg-blue-200 transition-colors font-medium">
-                        <Share2 size={18} />
-                        Auto-Post
-                    </button>
-                </div>
+                ))}
+            </div>
 
-                <p className="text-xs text-center text-gray-400">
-                    Want to remove the watermark? <a href="#" className="underline hover:text-blue-600">Upgrade to Pro</a>
-                </p>
+            {/* 3. Core Action Buttons */}
+            <div className="space-y-3">
+                <button
+                    onClick={downloadImage}
+                    disabled={loading}
+                    className="w-full flex items-center justify-center gap-2 bg-gray-900 hover:bg-black text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                >
+                    <Download size={18} />
+                    {loading ? 'Generating...' : 'Download Image'}
+                </button>
+
+                {/* 🟢 New: SaaS Conversion Hook */}
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+                    <h4 className="text-blue-900 font-bold text-sm mb-1">Too busy to post manually?</h4>
+                    <p className="text-blue-700 text-xs mb-3">Get quotes like this auto-posted to your Instagram.</p>
+                    <Link
+                        href="/tools/social-poster"
+                        className="inline-flex items-center justify-center gap-2 w-full bg-white border border-blue-200 text-blue-700 font-bold py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors"
+                    >
+                        <Rocket size={16} />
+                        Try Auto-Poster
+                    </Link>
+                </div>
             </div>
         </div>
     );

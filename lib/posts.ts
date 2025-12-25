@@ -74,6 +74,16 @@ export function getAllPosts(): PostData[] {
     return allPostsData;
 }
 
+export function getSortedPostsData() {
+    const allPosts = getAllPosts();
+    return allPosts.sort((a, b) => {
+        if (a.date && b.date) {
+            return a.date < b.date ? 1 : -1;
+        }
+        return 0;
+    });
+}
+
 export function getPostsByGroup(group: string) {
     const allPosts = getAllPosts();
     return allPosts.filter(post => post.group === group);
