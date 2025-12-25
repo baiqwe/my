@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { getDictionary } from '@/lib/get-dictionary';
 import { addLocaleToPath } from '@/lib/i18n-config';
 import QuoteGenerator from '@/components/QuoteGenerator';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -24,9 +24,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function Post({ params }: { params: Promise<{ lang: string; slug: string; group: string; tag: string }> }) {
     const { lang, slug, group, tag } = await params;
 
-    // Verify that the route params match the post data. 
-    // Ideally we should check if postData.group === group && postData.tag === tag
-    // If not, maybe 404 or redirect. For now, let's just load the post.
     let postData;
     try {
         postData = await getPostData(slug);
@@ -34,8 +31,12 @@ export default async function Post({ params }: { params: Promise<{ lang: string;
         notFound();
     }
 
-    // Optional: Strict checking
-    // if (postData.group !== group || postData.tag !== tag) { notFound(); }
+    // 🟢 核心修复：路由一致性验证
+    // 如果 URL 里的 group/tag 和 Markdown 文件里写的不一样，
+    // 强制 301 重定向到正确的 URL (Canonical URL)
+    if (postData.group !== group || postData.tag !== tag) {
+        redirect(`/${lang || 'en'}/quotes/${postData.group}/${postData.tag}/${slug}`);
+    }
 
     const dict = await getDictionary(lang);
     const homePath = addLocaleToPath('/', lang);

@@ -4,10 +4,10 @@ import { createClient } from '@/utils/supabase/server';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to match frontend expectations
-    const transformedBatches = batches?.map(batch => ({
+    const transformedBatches = batches?.map((batch: any) => ({
       id: batch.id,
       englishName: batch.english_name,
       gender: batch.gender,
@@ -77,8 +77,8 @@ export async function GET(request: NextRequest) {
       namesCount: batch.names_count,
       createdAt: batch.created_at,
       names: batch.generated_names
-        ?.sort((a, b) => a.position_in_batch - b.position_in_batch)
-        ?.map(name => ({
+        ?.sort((a: any, b: any) => a.position_in_batch - b.position_in_batch)
+        ?.map((name: any) => ({
           chinese: name.chinese_name,
           pinyin: name.pinyin,
           characters: name.characters,
@@ -113,10 +113,10 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
-    
+
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

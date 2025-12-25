@@ -102,7 +102,7 @@ export async function GET(
     // Transform data to match frontend expectations with validation
     console.log('API Debug - Raw names data sample:', names?.slice(0, 2));
 
-    const transformedNames = (names || []).map((name, index) => {
+    const transformedNames = (names || []).map((name: any, index: number) => {
       const transformed = {
         chinese: name.chinese_name || '',
         pinyin: name.pinyin || '',
@@ -121,7 +121,7 @@ export async function GET(
       }
 
       return transformed;
-    }).filter(name => name.chinese); // Filter out invalid names
+    }).filter((name: any) => name.chinese); // Filter out invalid names
 
     console.log('API Debug - Final transformed names count:', transformedNames.length);
 

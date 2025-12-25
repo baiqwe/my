@@ -26,10 +26,16 @@ export default function QuoteGenerator({ title, author = "DailySpark", descripti
         if (ref.current === null) return;
         setIsGenerating(true);
 
-        toPng(ref.current, { cacheBust: true })
+        toPng(ref.current, {
+            cacheBust: true,
+            pixelRatio: 3, // 3倍图，确保文字边缘锐利
+            width: 320,    // 原始渲染宽度
+            height: 400,   // 原始渲染高度
+            // 最终输出将是 (320*3) x (400*3) = 960 x 1200 px
+        })
             .then((dataUrl) => {
                 const link = document.createElement('a');
-                link.download = `dailyspark-quote-${currentTemplate}.png`;
+                link.download = `dailyspark-${currentTemplate}.png`;
                 link.href = dataUrl;
                 link.click();
                 setIsGenerating(false);
@@ -70,8 +76,8 @@ export default function QuoteGenerator({ title, author = "DailySpark", descripti
                             key={tmpl}
                             onClick={() => setCurrentTemplate(tmpl)}
                             className={`px-4 py-2 text-sm rounded-full capitalize transition-all ${currentTemplate === tmpl
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-white text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             {tmpl}
