@@ -4,9 +4,33 @@ import { cookies } from "next/headers";
 export const createClient = async () => {
   const cookieStore = await cookies();
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn("Supabase keys missing! Using mock client for development.");
+    return {
+      auth: {
+        getUser: async () => ({ data: { user: null }, error: null }),
+        getSession: async () => ({ data: { session: null }, error: null }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            single: () => ({ data: null, error: null }),
+            maybeSingle: () => ({ data: null, error: null }),
+            limit: () => ({ data: [], error: null }),
+            order: () => ({ data: [], error: null })
+          }),
+          order: () => ({ data: [], error: null }),
+          limit: () => ({ data: [], error: null })
+        }),
+        insert: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }),
+        update: () => ({ eq: () => ({ select: () => ({ single: () => ({ data: null, error: null }) }) }) }),
+      })
+    } as any;
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
